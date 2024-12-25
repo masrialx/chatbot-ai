@@ -35,7 +35,6 @@ class User(db.Model):
     subscription_plan = db.Column(db.String(50), nullable=True)
     subscription_expiry = db.Column(db.Date, nullable=True)
     token_count = db.Column(db.Integer, default=5)
-    last_token_update = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     def set_password(self, password):
         self.password = hashlib.sha256(password.encode()).hexdigest()
@@ -52,15 +51,6 @@ class User(db.Model):
         self.subscription_plan = plan
         self.subscription_expiry = datetime.date.today() + datetime.timedelta(days=30 * months)
         self.token_count = float('inf')  # Unlimited tokens with subscription
-
-    def update_tokens(self):
-        """Update tokens if they have expired and refill tokens if necessary."""
-        now = datetime.datetime.utcnow()
-        time_since_last_update = now - self.last_token_update
-        if time_since_last_update.days >= 1:  # Refill tokens every 24 hours
-            self.token_count = 5  # Reset to 5 tokens
-            self.last_token_update = now
-            db.session.commit()
 
 # Chat history model
 class ChatHistory(db.Model):
@@ -207,9 +197,6 @@ def chat():
         return jsonify({"error": "Message is required"}), 400
 
     user = User.query.get(session['user_id'])
-    
-    # Update tokens if expired
-    user.update_tokens()
 
     # Check if user is subscribed and has tokens left
     if not user.is_subscribed() and user.token_count <= 0:
