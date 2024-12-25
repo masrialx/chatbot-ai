@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot</title>
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Chat Container */
+        .chat-container {
+            width: 400px;
+            max-width: 100%;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .chat-header {
+            background-color: #0078d4;
+            color: white;
+            padding: 15px;
+            font-size: 16px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* Messages Area */
+        .messages {
+            padding: 15px;
+            height: 350px;
+            overflow-y: scroll;
+            background-color: #f7f7f7;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            word-wrap: break-word;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+
+        .user-message {
+            background-color: #0078d4;
+            color: white;
+            align-self: flex-start;
+        }
+
+        .ai-message {
+            background-color: #f1f1f1;
+            color: #333;
+            align-self: flex-end;
+        }
+
+        /* Input Area */
+        .input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #e1e1e1;
+            background-color: #fff;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 25px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        button {
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        button:hover {
+            background-color: #005b99;
+        }
+
+        /* Typing animation */
+        .typing-indicator {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            margin: 5px;
+            border-radius: 50%;
+            background-color: #0078d4;
+            animation: typing 1.5s infinite ease-in-out;
+        }
+
+        .typing-indicator:nth-child(2) {
+            animation-delay: 0.3s;
+        }
+
+        .typing-indicator:nth-child(3) {
+            animation-delay: 0.6s;
+        }
+
+        @keyframes typing {
+            0%, 50%, 100% {
+                opacity: 0.2;
+            }
+            25%, 75% {
+                opacity: 1;
+            }
+        }
+
+        /* Fade-in effect for messages */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">
+        AI Chatbot
+    </div>
+
+    <div class="messages" id="messages">
+        <!-- Chat messages will appear here -->
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="user_input" placeholder="Type a message..." />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+    // Check if there is a saved conversation in localStorage
+    let conversationHistory = JSON.parse(localStorage.getItem("conversationHistory")) || [];
+
+    // Append message to the chat window and conversation history
+    function appendMessage(content, sender) {
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("message", sender);
+        messageDiv.innerHTML = content;
+        document.getElementById("messages").appendChild(messageDiv);
+        document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+    }
+
+    // Function to render the conversation history
+    function renderConversationHistory() {
+        // Clear the current messages
+        const messagesDiv = document.getElementById("messages");
+        messagesDiv.innerHTML = '';
+
+        // Loop through history and render each message
+        conversationHistory.forEach((msg) => {
+            appendMessage(msg.content, msg.sender);
+        });
+    }
+
+    function typeMessage(message, element) {
+        let index = 0;
+        element.innerHTML = ''; // Clear the element content before typing
+
+        function typing() {
+            if (index < message.length) {
+                element.innerHTML += message.charAt(index); // Append one character at a time
+                index++;
+                setTimeout(typing, 50); // Adjust typing speed (in ms)
+            }
+        }
+
+        typing();
+    }
+
+    function sendMessage() {
+        const user_input = document.getElementById("user_input").value;
+        if (user_input.trim() === "") return;
+
+        // Append user message to history
+        conversationHistory.push({ content: user_input, sender: "user-message" });
+
+        // Append user message to chat window
+        appendMessage(user_input, "user-message");
+
+        // Show typing indicator for AI
+        const aiTypingIndicator = document.createElement("div");
+        aiTypingIndicator.classList.add("typing-indicator");
+        document.getElementById("messages").appendChild(aiTypingIndicator);
+
+        // Send to server for response
+        fetch("/get_response", {
+            method: "POST",
+            body: new URLSearchParams({
+                'user_input': user_input
+            }),
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const aiResponse = data.ai_response;
+
+            // Remove typing indicator
+            aiTypingIndicator.remove();
+
+            // Append the AI response to history and chat window
+            conversationHistory.push({ content: aiResponse, sender: "ai-message" });
+            appendMessage(aiResponse, "ai-message");
+
+            // Save updated conversation history to localStorage
+            localStorage.setItem("conversationHistory", JSON.stringify(conversationHistory));
+        });
+
+        document.getElementById("user_input").value = ""; // Clear input field
+    }
+
+    // Allow pressing Enter to send the message
+    document.getElementById("user_input").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            sendMessage();
+        }
+    });
+
+    // Render history when the page loads
+    window.onload = renderConversationHistory;
+</script>
+
+</body>
+</html>
