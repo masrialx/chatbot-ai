@@ -19,7 +19,7 @@ s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
 # API URL and Key
 api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent"
-api_key = "AIzaSyBUseAwUtOB_E0wW3LsNCQ43OhhFTzcmJQ"  # Replace with your actual API key
+api_key = "sedrfghjkljhgfhjk"  # Replace with your actual API key
 
 # User model
 class User(db.Model):
