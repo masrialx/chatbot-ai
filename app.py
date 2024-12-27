@@ -18,7 +18,7 @@ s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
 # External API details
 api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent"
-api_key = "AIzaSyBUseAwUtOB_E0wW3LsNCQ43OhhFTzcmJQ"
+api_key = "gfhjkljhgfhjkl"
 
 # PayPal SDK configuration
 paypalrestsdk.configure({
